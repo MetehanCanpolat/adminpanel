@@ -2,8 +2,8 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YY | Soru Yönetim Paneli</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>YY | Gelişmiş Soru Yönetimi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&family=Fredoka:wght@600&display=swap" rel="stylesheet">
     <style>
@@ -22,126 +22,157 @@
             background-color: var(--bg-main);
             color: var(--slate-200);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            overflow-x: hidden;
         }
 
         .glass-card {
             background: rgba(15, 23, 41, 0.6);
             backdrop-filter: blur(16px);
             border: 1px solid rgba(227, 232, 242, 0.08);
-            border-radius: 2.5rem;
         }
 
-        .btn-primary {
-            background: var(--primary-gradient);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        .btn-primary { background: var(--primary-gradient); transition: all 0.3s ease; }
+        .btn-primary:hover:not(:disabled) { filter: brightness(1.1); transform: scale(1.02); }
+
+        .swipe-container {
+            perspective: 1000px;
+            height: 400px;
+            width: 100%;
+            position: relative;
+            touch-action: none;
         }
 
-        .btn-primary:hover:not(:disabled) {
-            filter: brightness(1.1);
-            transform: scale(1.02);
-            box-shadow: 0 0 20px rgba(125, 59, 237, 0.3);
+        .swipe-card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            cursor: grab;
+            user-select: none;
         }
 
-        input, select, textarea {
-            background: rgba(3, 5, 23, 0.5) !important;
-            border: 1px solid rgba(227, 232, 242, 0.1) !important;
-            color: white !important;
-            transition: all 0.3s ease;
-        }
+        .swipe-card.dragging { transition: none; cursor: grabbing; }
 
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--violet-600) !important;
-            box-shadow: 0 0 15px rgba(125, 59, 237, 0.2);
-            outline: none;
+        .indicator {
+            position: absolute;
+            top: 20px;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 24px;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 50;
         }
+        .indicator.delete { border: 4px solid var(--rose-500); color: var(--rose-500); left: 30px; transform: rotate(-20deg); }
+        .indicator.keep { border: 4px solid #10b981; color: #10b981; right: 30px; transform: rotate(20deg); }
 
-        .animate-float {
-            animation: float 6s ease-in-out infinite;
-        }
+        .tab-btn { border-bottom: 3px solid transparent; opacity: 0.5; }
+        .tab-btn.active { border-color: var(--violet-600); color: white; opacity: 1; }
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: var(--bg-secondary); border-radius: 10px; }
     </style>
 </head>
-<body class="p-6">
+<body class="p-4 md:p-8">
 
-    <div class="w-full max-w-2xl glass-card p-10 md:p-16 shadow-2xl relative overflow-hidden">
-        <div class="absolute -top-24 -right-24 w-48 h-48 bg-violet-600/10 blur-[80px] rounded-full"></div>
-        
-        <div class="flex items-center gap-5 mb-12 relative z-10 animate-float">
-            <div class="w-14 h-14 rounded-2xl btn-primary flex items-center justify-center shadow-lg">
-                <span class="font-black text-2xl text-white italic">YY</span>
-            </div>
-            <div>
-                <h1 class="text-3xl font-black italic uppercase tracking-tighter text-white">Soru Yönetimi</h1>
-                <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Admin Kontrol Paneli</p>
-            </div>
-        </div>
-
-        <div id="login-section" class="space-y-6 relative z-10">
-            <div class="p-8 bg-white/5 rounded-[2rem] border border-white/5">
-                <p class="text-slate-400 text-sm mb-5 font-medium italic">Erişim için yönetici şifresini girin:</p>
-                <div class="flex flex-col sm:flex-row gap-4">
-                    <input type="password" id="admin-password" placeholder="Şifre..." 
-                           class="flex-1 rounded-2xl px-6 py-4 font-bold text-lg">
-                    <button onclick="handleLogin()" 
-                            class="btn-primary px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-white shadow-xl active:scale-95">
-                        GİRİŞ
-                    </button>
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-center gap-6 mb-10">
+            <div class="flex items-center gap-4">
+                <img src="logo.png" alt="YY" class="w-12 h-12 rounded-full border-2 border-violet-600 shadow-lg" onerror="this.src='https://via.placeholder.com/48?text=YY'">
+                <div>
+                    <h1 class="text-2xl font-black italic uppercase tracking-tighter">YY Yönetim</h1>
+                    <p id="auth-status" class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Bağlanıyor...</p>
                 </div>
             </div>
-        </div>
-
-        <div id="form-section" class="hidden space-y-8 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-3">
-                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-2">Kategori</label>
-                    <select id="category" class="w-full rounded-2xl px-6 py-4 font-bold appearance-none cursor-pointer">
-                        <option value="Genel">Genel 🌍</option>
-                        <option value="Aksiyon">Aksiyon ⚡</option>
-                        <option value="Komedi">Komedi 😂</option>
-                        <option value="Zor">Zor 🔥</option>
-                        <option value="Mutfak">Mutfak 🍳</option>
-                        <option value="Dans">Dans 💃</option>
-                    </select>
-                </div>
-                <div class="space-y-3">
-                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-2">Süre (Saniye)</label>
-                    <input type="number" id="time" value="30" min="5" max="300"
-                           class="w-full rounded-2xl px-6 py-4 font-bold">
-                </div>
-            </div>
-
-            <div class="space-y-3">
-                <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-2">Görev Metni</label>
-                <textarea id="question-text" rows="4" placeholder="Arkadaşının yapmasını istediğin görevi yaz..." 
-                          class="w-full rounded-2xl px-6 py-4 font-bold resize-none leading-relaxed"></textarea>
-            </div>
-
-            <button id="submit-btn" onclick="submitToFirebase()" 
-                    class="w-full btn-primary py-6 rounded-[1.5rem] font-black text-xl text-white shadow-2xl shadow-indigo-900/20 italic flex items-center justify-center gap-3 disabled:opacity-50">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-                VERİTABANINA EKLE
-            </button>
-
-            <div id="response-msg" class="hidden p-4 rounded-2xl text-center font-bold text-sm"></div>
             
-            <div class="pt-6 border-t border-white/5 flex justify-between items-center">
-                <button onclick="location.reload()" class="text-slate-500 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">ÇIKIŞ YAP</button>
-                <span class="text-slate-700 text-[10px] font-black tracking-widest uppercase">ID: yapyapabilirsen-8f228</span>
+            <div id="nav-tabs" class="hidden flex gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/5 overflow-x-auto no-scrollbar">
+                <button onclick="switchTab('add')" id="tab-add" class="tab-btn active px-4 py-2 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all">EKLE</button>
+                <button onclick="switchTab('list')" id="tab-list" class="tab-btn px-4 py-2 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all">LİSTE</button>
+                <button onclick="switchTab('swipe')" id="tab-swipe" class="tab-btn px-4 py-2 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all">AYIKLA ⚡</button>
             </div>
         </div>
+
+        <!-- Login -->
+        <div id="login-section" class="glass-card rounded-[2.5rem] p-10 text-center max-w-md mx-auto">
+            <h2 class="text-xl font-bold mb-6">Yönetici Girişi</h2>
+            <input type="password" id="admin-password" placeholder="Şifre..." class="w-full bg-slate-950/50 border border-white/10 rounded-2xl px-6 py-4 font-bold text-center mb-6 focus:ring-2 focus:ring-violet-500 outline-none transition-all">
+            <button onclick="handleLogin()" class="btn-primary w-full py-4 rounded-2xl font-black tracking-widest uppercase shadow-xl active:scale-95 transition-transform">PANELİ AÇ</button>
+        </div>
+
+        <!-- Section: Add -->
+        <div id="section-add" class="hidden animate-in fade-in duration-500">
+            <div class="glass-card rounded-[2.5rem] p-8 md:p-12">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase text-slate-500 ml-2 tracking-widest">Kategori</label>
+                        <select id="q-category" class="w-full bg-slate-950/50 border border-white/10 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-violet-500 appearance-none text-white">
+                            <option value="Doğruluk-Cesaret">Doğruluk-Cesaret</option>
+                            <option value="Hızlı Düşün">Hızlı Düşün</option>
+                            <option value="Couple Soruları">Couple Soruları</option>
+                            <option value="Genel Kültür">Genel Kültür</option>
+                            <option value="Yılbaşı Özel">Yılbaşı Özel</option>
+                            <option value="Tanışma">Tanışma</option>
+                            <option value="+18">+18</option>
+                            <option value="Çember Oyunu">Çember Oyunu</option>
+                            <option value="Eğlence">Eğlence</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase text-slate-500 ml-2 tracking-widest">Süre (Saniye)</label>
+                        <input type="number" id="q-time" value="30" class="w-full bg-slate-950/50 border border-white/10 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-violet-500 text-white">
+                    </div>
+                </div>
+                <div class="space-y-2 mb-8">
+                    <label class="text-[10px] font-black uppercase text-slate-500 ml-2 tracking-widest">Soru Metni</label>
+                    <textarea id="q-text" rows="4" placeholder="Görevi buraya yaz..." class="w-full bg-slate-950/50 border border-white/10 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-violet-500 resize-none text-white leading-relaxed"></textarea>
+                </div>
+                <button onclick="submitToFirebase()" id="submit-btn" class="btn-primary w-full py-6 rounded-3xl font-black text-xl italic uppercase shadow-2xl active:scale-95 transition-all">SORUYU KAYDET</button>
+            </div>
+        </div>
+
+        <!-- Section: List -->
+        <div id="section-list" class="hidden space-y-8 animate-in fade-in duration-500 pb-20">
+            <div id="questions-list-container" class="space-y-10">
+                <div class="text-center py-20 text-slate-500 font-bold italic">Sorular yükleniyor...</div>
+            </div>
+        </div>
+
+        <!-- Section: Swipe -->
+        <div id="section-swipe" class="hidden animate-in fade-in duration-500 overflow-hidden">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-black italic uppercase tracking-tighter">Hızlı Ayıklama</h2>
+                <p class="text-slate-500 text-xs font-bold uppercase tracking-[0.2em] mt-2">Sola At: Sil | Sağa At: Kalsın</p>
+            </div>
+            
+            <div class="relative max-w-sm mx-auto h-[450px]">
+                <div id="swipe-container" class="swipe-container h-full">
+                    <div class="flex items-center justify-center h-full text-slate-600 font-bold italic">Sorular taranıyor...</div>
+                </div>
+                <div id="indicator-delete" class="indicator delete">SİL</div>
+                <div id="indicator-keep" class="indicator keep">TUT</div>
+            </div>
+
+            <div class="flex justify-center gap-10 mt-6 pb-10">
+                <button onclick="simulateSwipe('left')" class="w-16 h-16 rounded-full bg-rose-500/10 border-2 border-rose-500 flex items-center justify-center text-rose-500 active:scale-90 transition-all shadow-lg hover:bg-rose-500 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+                <button onclick="simulateSwipe('right')" class="w-16 h-16 rounded-full bg-emerald-500/10 border-2 border-emerald-500 flex items-center justify-center text-emerald-500 active:scale-90 transition-all shadow-lg hover:bg-emerald-500 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hidden z-[100] shadow-2xl transition-all"></div>
     </div>
 
+    <!-- Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDdqsVJ1Wylc45fwT4z7SqRze4Ge1vAMes",
@@ -156,82 +187,280 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        let currentUser = null;
+        let user = null;
+        let allQuestions = [];
+        let currentSwipeIndex = 0;
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                console.log("Auth Hazır:", user.uid);
+        onAuthStateChanged(auth, async (u) => {
+            if (u) {
+                user = u;
+                document.getElementById('auth-status').innerText = "Bağlantı Hazır: " + u.uid.substring(0, 6);
+                await fetchQuestions();
             } else {
-                signInAnonymously(auth).catch(err => {
-                    console.error("Firebase Auth Hatası:", err);
-                    showMsg("Yetkilendirme hatası: " + err.message, "bg-rose-500/10 text-rose-500");
-                });
+                signInAnonymously(auth);
             }
         });
 
         window.handleLogin = () => {
             const pass = document.getElementById('admin-password').value;
-            if (pass === "yap123") { 
+            if (pass === "yap123") {
                 document.getElementById('login-section').classList.add('hidden');
-                document.getElementById('form-section').classList.remove('hidden');
+                document.getElementById('section-add').classList.remove('hidden');
+                document.getElementById('nav-tabs').classList.remove('hidden');
             } else {
-                showMsg("Hatalı şifre!", "bg-rose-500/10 text-rose-500");
+                showToast("Hatalı Şifre!", "bg-rose-500 text-white");
+            }
+        };
+
+        window.switchTab = async (tab) => {
+            document.querySelectorAll('[id^="section-"]').forEach(s => s.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('section-' + tab).classList.remove('hidden');
+            document.getElementById('tab-' + tab).classList.add('active');
+            if (tab === 'list' || tab === 'swipe') await fetchQuestions();
+        };
+
+        window.fetchQuestions = async () => {
+            try {
+                const querySnapshot = await getDocs(collection(db, 'questions'));
+                allQuestions = [];
+                querySnapshot.forEach((doc) => {
+                    allQuestions.push({ id: doc.id, ...doc.data() });
+                });
+                // Yeniden render et
+                renderList();
+                renderSwipeCards();
+            } catch (err) {
+                console.error("Veri çekme hatası:", err);
+                if(err.code === 'permission-denied') {
+                    showToast("Yetki Hatası! Rules ayarını kontrol et.", "bg-rose-600 text-white");
+                }
             }
         };
 
         window.submitToFirebase = async () => {
-            const category = document.getElementById('category').value;
-            const time = parseInt(document.getElementById('time').value);
-            const question = document.getElementById('question-text').value;
-            const btn = document.getElementById('submit-btn');
-
-            if (!question.trim()) {
-                showMsg("Lütfen soru metnini boş bırakma!", "bg-rose-500/10 text-rose-500");
-                return;
-            }
-
-            if (!currentUser) {
-                showMsg("Oturum henüz hazır değil...", "bg-amber-500/10 text-amber-500");
-                return;
-            }
+            const category = document.getElementById('q-category').value;
+            const time = parseInt(document.getElementById('q-time').value);
+            const question = document.getElementById('q-text').value;
+            if (!question.trim()) return showToast("Soru boş olamaz!", "bg-amber-500 text-slate-900");
 
             try {
+                const btn = document.getElementById('submit-btn');
                 btn.disabled = true;
-                btn.innerText = "YÜKLENİYOR...";
-
-                const colRef = collection(db, 'questions');
-                
-                await addDoc(colRef, {
-                    category: category,
-                    time: time,
-                    question: question,
-                    createdAt: serverTimestamp()
+                btn.innerText = "KAYDEDİLİYOR...";
+                await addDoc(collection(db, 'questions'), { 
+                    category, 
+                    time, 
+                    question, 
+                    createdAt: serverTimestamp() 
                 });
-
-                showMsg("Soru veritabanına başarıyla uçtu! 🚀", "bg-emerald-500/10 text-emerald-500");
-                document.getElementById('question-text').value = ""; 
-                
-            } catch (error) {
-                console.error("Firebase Yazma Hatası:", error);
-                let errorMsg = "Hata: " + error.code;
-                if (error.code === 'permission-denied') {
-                    errorMsg = "Erişim Reddedildi: Lütfen Firebase Console'dan Firestore kurallarını güncelleyin.";
-                }
-                showMsg(errorMsg, "bg-rose-500/10 text-rose-500");
+                showToast("Soru Başarıyla Eklendi!", "bg-emerald-500 text-white");
+                document.getElementById('q-text').value = "";
+                await fetchQuestions();
+            } catch (err) {
+                showToast("Hata: " + err.code, "bg-rose-500 text-white");
             } finally {
+                const btn = document.getElementById('submit-btn');
                 btn.disabled = false;
-                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg> VERİTABANINA EKLE`;
+                btn.innerText = "SORUYU KAYDET";
             }
         };
 
-        function showMsg(text, classes) {
-            const msg = document.getElementById('response-msg');
-            msg.innerText = text;
-            msg.className = "p-4 rounded-2xl text-center font-bold text-sm " + classes;
-            msg.classList.remove('hidden');
-            const duration = classes.includes('rose') ? 8000 : 4000;
-            setTimeout(() => msg.classList.add('hidden'), duration);
+        window.deleteQuestionUI = async (id) => {
+            if (!confirm("Bu soruyu ebediyen silmek istediğine emin misin?")) return;
+            try {
+                await deleteDoc(doc(db, 'questions', id));
+                showToast("Soru Veritabanından Silindi", "bg-slate-700 text-white");
+                await fetchQuestions();
+            } catch (err) {
+                showToast("Silme hatası!", "bg-rose-500 text-white");
+            }
+        };
+
+        function renderList() {
+            const container = document.getElementById('questions-list-container');
+            if (allQuestions.length === 0) {
+                container.innerHTML = `<div class="text-center py-20 text-slate-600 font-bold">Veritabanında hiç soru yok.</div>`;
+                return;
+            }
+
+            // HATA DÜZELTİLDİ: Kategoriye göre gruplama mantığı
+            const grouped = allQuestions.reduce((acc, q) => {
+                const catName = q.category || 'Belirsiz';
+                if (!acc[catName]) acc[catName] = [];
+                acc[catName].push(q);
+                return acc;
+            }, {});
+
+            container.innerHTML = "";
+            Object.keys(grouped).sort().forEach(cat => {
+                const section = document.createElement('div');
+                section.innerHTML = `
+                    <div class="flex items-center gap-4 mb-4 mt-8">
+                        <h3 class="text-lg font-black italic uppercase text-violet-400 tracking-tight">${cat}</h3>
+                        <div class="h-px flex-1 bg-white/10"></div>
+                        <span class="text-[9px] font-black bg-white/5 border border-white/5 px-2 py-0.5 rounded-md text-slate-500">${grouped[cat].length} ADET</span>
+                    </div>
+                    <div class="grid gap-2">
+                        ${grouped[cat].map(q => `
+                            <div class="glass-card p-4 rounded-xl flex justify-between items-center group hover:border-white/20 transition-all">
+                                <div class="flex-1 pr-4">
+                                    <p class="text-sm font-semibold text-slate-200 leading-snug">${q.question}</p>
+                                    <span class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1 inline-block">${q.time} SN</span>
+                                </div>
+                                <button onclick="deleteQuestionUI('${q.id}')" class="p-2 rounded-lg bg-rose-500/5 text-slate-600 hover:text-rose-500 hover:bg-rose-500/20 transition-all">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(section);
+            });
+        }
+
+        function renderSwipeCards() {
+            const container = document.getElementById('swipe-container');
+            container.innerHTML = "";
+            
+            // En üstteki 3 kartı göster (performans için)
+            const activeQs = allQuestions.slice(currentSwipeIndex, currentSwipeIndex + 3);
+            
+            if (activeQs.length === 0) {
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-500 font-bold italic gap-4">
+                    <div class="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    Tüm sorular ayıklandı!
+                </div>`;
+                return;
+            }
+
+            activeQs.reverse().forEach((q, idx) => {
+                const card = document.createElement('div');
+                card.className = `swipe-card glass-card rounded-[2.5rem] p-10 flex flex-col items-center justify-center text-center shadow-2xl border-2 border-white/5`;
+                card.style.zIndex = idx;
+                
+                // Stack efekti
+                const scale = 1 - (activeQs.length - 1 - idx) * 0.05;
+                const translateY = (activeQs.length - 1 - idx) * 15;
+                card.style.transform = `scale(${scale}) translateY(${translateY}px)`;
+                
+                card.innerHTML = `
+                    <div class="mb-4 px-3 py-1 bg-violet-600/20 border border-violet-500/30 rounded-full text-[9px] font-black text-violet-400 uppercase tracking-widest">${q.category}</div>
+                    <p class="text-xl md:text-2xl font-black text-white italic leading-tight mb-8">"${q.question}"</p>
+                    <div class="flex items-center gap-2 text-slate-500 font-black text-[10px] uppercase tracking-widest">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        ${q.time} SANİYE
+                    </div>
+                `;
+
+                if (idx === activeQs.length - 1) initTouch(card, q);
+                container.appendChild(card);
+            });
+        }
+
+        let startX = 0;
+        function initTouch(el, question) {
+            let currentX = 0;
+            const delInd = document.getElementById('indicator-delete');
+            const keepInd = document.getElementById('indicator-keep');
+
+            const handleMove = (x) => {
+                currentX = x - startX;
+                const rotation = currentX / 10;
+                el.style.transform = `translateX(${currentX}px) rotate(${rotation}deg)`;
+                
+                if (currentX < -50) { 
+                    delInd.style.opacity = Math.min(Math.abs(currentX)/150, 1); 
+                    keepInd.style.opacity = 0; 
+                } else if (currentX > 50) { 
+                    keepInd.style.opacity = Math.min(currentX/150, 1); 
+                    delInd.style.opacity = 0; 
+                } else { 
+                    delInd.style.opacity = 0; 
+                    keepInd.style.opacity = 0; 
+                }
+            };
+
+            const handleEnd = async () => {
+                el.classList.remove('dragging');
+                delInd.style.opacity = 0;
+                keepInd.style.opacity = 0;
+
+                if (currentX < -120) {
+                    el.style.transform = `translateX(-1000px) rotate(-30deg)`;
+                    el.style.opacity = 0;
+                    try {
+                        await deleteDoc(doc(db, 'questions', question.id));
+                        showToast("Silindi", "bg-rose-600 text-white");
+                    } catch(e) { console.error(e); }
+                    nextSwipe();
+                } else if (currentX > 120) {
+                    el.style.transform = `translateX(1000px) rotate(30deg)`;
+                    el.style.opacity = 0;
+                    showToast("Tutuldu", "bg-emerald-600 text-white");
+                    nextSwipe();
+                } else {
+                    el.style.transform = `translateX(0) rotate(0) scale(1)`;
+                }
+                currentX = 0;
+            };
+
+            el.addEventListener('touchstart', e => {
+                startX = e.touches[0].clientX;
+                el.classList.add('dragging');
+            });
+            el.addEventListener('touchmove', e => handleMove(e.touches[0].clientX));
+            el.addEventListener('touchend', handleEnd);
+
+            // Mouse desteği (Desktop testi için)
+            el.addEventListener('mousedown', e => {
+                startX = e.clientX;
+                el.classList.add('dragging');
+                const onMouseMove = (me) => handleMove(me.clientX);
+                const onMouseUp = () => {
+                    handleEnd();
+                    window.removeEventListener('mousemove', onMouseMove);
+                    window.removeEventListener('mouseup', onMouseUp);
+                };
+                window.addEventListener('mousemove', onMouseMove);
+                window.addEventListener('mouseup', onMouseUp);
+            });
+        }
+
+        window.simulateSwipe = async (dir) => {
+            const q = allQuestions[currentSwipeIndex];
+            if (!q) return;
+            
+            const cards = document.querySelectorAll('.swipe-card');
+            const topCard = cards[cards.length - 1];
+            
+            if (dir === 'left') {
+                topCard.style.transform = `translateX(-1000px) rotate(-30deg)`;
+                await deleteDoc(doc(db, 'questions', q.id));
+                showToast("Silindi", "bg-rose-600 text-white");
+            } else {
+                topCard.style.transform = `translateX(1000px) rotate(30deg)`;
+                showToast("Tutuldu", "bg-emerald-600 text-white");
+            }
+            topCard.style.opacity = 0;
+            nextSwipe();
+        };
+
+        function nextSwipe() {
+            setTimeout(() => {
+                currentSwipeIndex++;
+                renderSwipeCards();
+            }, 300);
+        }
+
+        function showToast(text, classes) {
+            const t = document.getElementById('toast');
+            t.innerText = text;
+            t.className = `fixed bottom-10 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest z-[100] shadow-2xl ${classes}`;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 2000);
         }
     </script>
 </body>
