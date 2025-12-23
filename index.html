@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YY | Soru Yönetim Paneli</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&family=Fredoka:wght@600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: rgb(3, 5, 23);
+            --bg-secondary: rgb(15, 23, 41);
+            --violet-600: rgb(125, 59, 237);
+            --rose-500: rgb(245, 40, 94);
+            --slate-200: rgb(227, 232, 242);
+            --slate-500: rgb(99, 115, 140);
+            --primary-gradient: linear-gradient(to right, #AF52DE, #5856D6);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--slate-200);
+            min-h-screen: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 41, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(227, 232, 242, 0.08);
+            border-radius: 2.5rem;
+        }
+
+        .primary-gradient-text {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.1);
+            transform: scale(1.02);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        /* Input Styles */
+        input, select, textarea {
+            background: rgba(3, 5, 23, 0.5) !important;
+            border: 1px solid rgba(227, 232, 242, 0.1) !important;
+            color: white !important;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--violet-600) !important;
+            box-shadow: 0 0 15px rgba(125, 59, 237, 0.2);
+            outline: none;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-6">
+
+    <div class="w-full max-w-2xl glass-card p-10 md:p-16 shadow-2xl relative overflow-hidden">
+        <!-- Dekoratif Arkaplan -->
+        <div class="absolute -top-24 -right-24 w-48 h-48 bg-violet-600/10 blur-[80px] rounded-full"></div>
+        
+        <!-- Header -->
+        <div class="flex items-center gap-5 mb-12 relative z-10">
+            <div class="w-14 h-14 rounded-2xl btn-primary flex items-center justify-center shadow-lg">
+                <span class="font-black text-2xl text-white italic">YY</span>
+            </div>
+            <div>
+                <h1 class="text-3xl font-black italic uppercase tracking-tighter">Soru Yönetimi</h1>
+                <p class="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Admin Kontrol Paneli</p>
+            </div>
+        </div>
+
+        <!-- Login Section -->
+        <div id="login-section" class="space-y-6 relative z-10">
+            <div class="p-6 bg-white/5 rounded-3xl border border-white/5">
+                <p class="text-slate-400 text-sm mb-4 font-medium italic">Devam etmek için yönetici şifresini girin:</p>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <input type="password" id="admin-password" placeholder="Şifre..." 
+                           class="flex-1 rounded-2xl px-6 py-4 font-bold text-lg">
+                    <button onclick="handleLogin()" 
+                            class="btn-primary px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-white shadow-xl">
+                        GİRİŞ YAP
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Section (Hidden by default) -->
+        <div id="form-section" class="hidden space-y-8 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-3">
+                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-2">Kategori Seçimi</label>
+                    <select id="category" class="w-full rounded-2xl px-6 py-4 font-bold appearance-none">
+                        <option value="Genel">Genel 🌍</option>
+                        <option value="Aksiyon">Aksiyon ⚡</option>
+                        <option value="Komedi">Komedi 😂</option>
+                        <option value="Zor">Zor 🔥</option>
+                        <option value="Mutfak">Mutfak 🍳</option>
+                        <option value="Dans">Dans 💃</option>
+                    </select>
+                </div>
+                <div class="space-y-3">
+                    <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-2">Süre (Saniye)</label>
+                    <input type="number" id="time" value="30" min="5" max="300"
+                           class="w-full rounded-2xl px-6 py-4 font-bold">
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <label class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-2">Görev / Soru Metni</label>
+                <textarea id="question-text" rows="4" placeholder="Arkadaşının yapmasını istediğin görevi buraya detaylıca yaz..." 
+                          class="w-full rounded-2xl px-6 py-4 font-bold resize-none leading-relaxed"></textarea>
+            </div>
+
+            <button id="submit-btn" onclick="submitToFirebase()" 
+                    class="w-full btn-primary py-6 rounded-3xl font-black text-xl text-white shadow-2xl shadow-indigo-900/20 italic flex items-center justify-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                VERİTABANINA GÖNDER
+            </button>
+
+            <div id="response-msg" class="hidden p-4 rounded-2xl text-center font-bold text-sm"></div>
+            
+            <div class="pt-6 border-t border-white/5 flex justify-between items-center">
+                <button onclick="location.reload()" class="text-slate-500 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors">Oturumu Kapat</button>
+                <span class="text-slate-600 text-[10px] font-bold">YY Cloud Database v1.0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK & Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase yapılandırması (Kendi bilgilerinle güncellemen gerekecek)
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'yap-yapabilirsen-v1';
+
+        // Servisleri başlat
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Anonim giriş yap (Firestore yazma izni için gerekli olabilir)
+        signInAnonymously(auth).catch(err => console.error("Auth Error:", err));
+
+        // Global fonksiyonlar
+        window.handleLogin = () => {
+            const pass = document.getElementById('admin-password').value;
+            if (pass === "yap123") { // Burayı kendi şifrenle değiştirebilirsin
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('form-section').classList.remove('hidden');
+            } else {
+                showMsg("Hatalı şifre! Tekrar dene.", "bg-rose-500/10 text-rose-500");
+            }
+        };
+
+        window.submitToFirebase = async () => {
+            const category = document.getElementById('category').value;
+            const time = parseInt(document.getElementById('time').value);
+            const question = document.getElementById('question-text').value;
+            const btn = document.getElementById('submit-btn');
+
+            if (!question.trim()) {
+                showMsg("Lütfen bir soru metni girin!", "bg-rose-500/10 text-rose-500");
+                return;
+            }
+
+            try {
+                btn.disabled = true;
+                btn.innerText = "GÖNDERİLİYOR...";
+
+                // Firestore yolu: artifacts / {appId} / public / data / questions
+                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'questions');
+                
+                await addDoc(colRef, {
+                    category: category,
+                    time: time,
+                    question: question,
+                    createdAt: serverTimestamp()
+                });
+
+                showMsg("Soru başarıyla eklendi! 🎉", "bg-emerald-500/10 text-emerald-500");
+                document.getElementById('question-text').value = ""; // Formu temizle
+                
+            } catch (error) {
+                console.error("Firebase Error:", error);
+                showMsg("Hata oluştu: " + error.message, "bg-rose-500/10 text-rose-500");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg> VERİTABANINA GÖNDER`;
+            }
+        };
+
+        function showMsg(text, classes) {
+            const msg = document.getElementById('response-msg');
+            msg.innerText = text;
+            msg.className = "p-4 rounded-2xl text-center font-bold text-sm " + classes;
+            msg.classList.remove('hidden');
+            setTimeout(() => msg.classList.add('hidden'), 4000);
+        }
+    </script>
+</body>
+</html>
