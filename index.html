@@ -1,260 +1,515 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yap Yapabilirsen | Partinin Yıldızı Sen Ol!</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>YY | Gelişmiş Soru Yönetimi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&family=Fredoka:wght@600&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* SwiftUI Tema Renkleri */
             --bg-main: rgb(3, 5, 23);
             --bg-secondary: rgb(15, 23, 41);
             --violet-600: rgb(125, 59, 237);
             --rose-500: rgb(245, 40, 94);
             --slate-200: rgb(227, 232, 242);
             --slate-500: rgb(99, 115, 140);
-            
-            /* Gradyan Eşleşmeleri */
-            --primary-start: #AF52DE;
-            --primary-end: #5856D6;
-            --action-start: #FF9500;
-            --action-end: #FF2D55;
+            --primary-gradient: linear-gradient(to right, #AF52DE, #5856D6);
         }
 
         body {
             font-family: 'Outfit', sans-serif;
             background-color: var(--bg-main);
             color: var(--slate-200);
+            min-height: 100vh;
             overflow-x: hidden;
         }
-
-        .fun-font { font-family: 'Fredoka', sans-serif; }
-        
-        .primary-gradient-text {
-            background: linear-gradient(to right, var(--primary-start), var(--primary-end));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .bg-action-gradient { background: linear-gradient(to right, var(--action-start), var(--action-end)); }
-        .bg-primary-gradient { background: linear-gradient(to right, var(--primary-start), var(--primary-end)); }
 
         .glass-card {
             background: rgba(15, 23, 41, 0.6);
             backdrop-filter: blur(16px);
             border: 1px solid rgba(227, 232, 242, 0.08);
-            border-radius: 2.5rem;
         }
 
-        .float-animation {
-            animation: float 6s ease-in-out infinite;
+        .btn-primary { background: var(--primary-gradient); transition: all 0.3s ease; }
+        .btn-primary:hover:not(:disabled) { filter: brightness(1.1); transform: scale(1.02); }
+
+        .swipe-container {
+            perspective: 1000px;
+            height: 400px;
+            width: 100%;
+            position: relative;
+            touch-action: none;
         }
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-        }
-
-        .blob {
+        .swipe-card {
             position: absolute;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(125, 59, 237, 0.15) 0%, rgba(88, 86, 214, 0.05) 100%);
-            filter: blur(100px);
-            z-index: -1;
-            border-radius: 50%;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            cursor: grab;
+            user-select: none;
         }
 
-        html { scroll-behavior: smooth; }
+        .swipe-card.dragging { transition: none; cursor: grabbing; }
 
-        /* Modal Animasyonları */
-        #policy-modal.active { display: flex; animation: fadeIn 0.3s ease forwards; }
+        .indicator {
+            position: absolute;
+            top: 20px;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 24px;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 50;
+        }
+        .indicator.delete { border: 4px solid var(--rose-500); color: var(--rose-500); left: 30px; transform: rotate(-20deg); }
+        .indicator.keep { border: 4px solid #10b981; color: #10b981; right: 30px; transform: rotate(20deg); }
+
+        .tab-btn { border-bottom: 3px solid transparent; opacity: 0.5; }
+        .tab-btn.active { border-color: var(--violet-600); color: white; opacity: 1; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: var(--bg-secondary); border-radius: 10px; }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* Modal Blur */
+        #edit-modal.active { display: flex; animation: fadeIn 0.3s ease forwards; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* Prose Customization for Privacy Content */
-        .policy-content h3 { color: white; font-weight: 900; font-size: 1.25rem; margin-top: 2rem; margin-bottom: 1rem; text-transform: uppercase; font-style: italic; }
-        .policy-content p { color: var(--slate-500); line-height: 1.7; margin-bottom: 1rem; font-weight: 500; }
-        .policy-content ul { list-style: disc; padding-left: 1.5rem; margin-bottom: 1rem; color: var(--slate-500); }
-        .policy-content li { margin-bottom: 0.5rem; }
-        .policy-content strong { color: var(--slate-200); }
     </style>
 </head>
-<body class="antialiased">
+<body class="p-4 md:p-8">
 
-    <!-- Arkaplan Atmosferi -->
-    <div class="blob top-[-250px] left-[-250px]"></div>
-    <div class="blob bottom-[20%] right-[-150px] opacity-60"></div>
-
-    <!-- Navigasyon -->
-    <nav class="fixed top-0 w-full z-50 px-6 py-6">
-        <div class="max-w-6xl mx-auto glass-card px-8 py-4 flex justify-between items-center shadow-2xl">
-            <div class="flex items-center gap-3 text-white">
-                <div class="w-10 h-10 rounded-xl bg-primary-gradient flex items-center justify-center shadow-lg overflow-hidden">
-                    <img src="logo.png" alt="YY Logo" class="w-full h-full object-contain p-1.5" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
-                    <span class="fun-font text-xl font-black text-white italic hidden">YY</span>
-                </div>
-                <span class="hidden sm:inline font-black tracking-tighter uppercase text-lg italic">Yap Yapabilirsen</span>
-            </div>
-            <div class="hidden md:flex gap-10 text-xs font-black uppercase tracking-[0.2em] text-slate-500">
-                <a href="#ozellikler" class="hover:text-white transition-colors">Özellikler</a>
-                <a href="#nasil-oynanir" class="hover:text-white transition-colors">Nasıl Oynanır?</a>
-                <a href="#iletisim" class="hover:text-white transition-colors">İletişim</a>
-                <a href="#indir" class="hover:text-white transition-colors">İndir</a>
-            </div>
-            <a href="#indir" class="bg-action-gradient px-8 py-3 rounded-2xl font-black text-xs tracking-widest text-white hover:brightness-110 transition-all active:scale-95 shadow-lg">
-                OYNA
-            </a>
-        </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <section class="relative pt-48 pb-24 px-6 min-h-screen flex flex-col items-center justify-center text-center">
-        <div class="float-animation mb-10">
-            <div class="w-40 h-40 md:w-56 md:h-56 rounded-[3.5rem] bg-primary-gradient flex items-center justify-center shadow-[0_0_60px_rgba(175,82,222,0.3)] border border-white/10 overflow-hidden">
-                <img src="logo.png" alt="YY Logo" class="w-full h-full object-contain p-6 md:p-8 drop-shadow-2xl" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
-                <span class="fun-font text-7xl md:text-9xl font-black text-white italic drop-shadow-2xl hidden">YY</span>
-            </div>
-        </div>
-        <h1 class="text-6xl md:text-9xl font-black mb-8 tracking-tighter uppercase italic leading-[0.9] text-white">
-            PARTİNİN <br> <span class="primary-gradient-text">YILDIZI</span> SEN OL!
-        </h1>
-        <p class="max-w-xl text-slate-500 text-lg md:text-xl font-medium mb-14 leading-relaxed">
-            Arkadaş ortamında buzları eritmenin en teknolojik yolu. <br>
-            Meydan oku, çarkı çevir ve cesaretini göster!
-        </p>
-        <div class="flex flex-col sm:flex-row gap-5">
-            <a href="#indir" class="bg-action-gradient text-white px-12 py-6 rounded-3xl font-black text-xl hover:brightness-110 transition-all shadow-2xl shadow-pink-900/30">
-                HEMEN BAŞLA
-            </a>
-        </div>
-    </section>
-
-    <!-- Özellikler Section -->
-    <section id="ozellikler" class="py-32 px-6 max-w-7xl mx-auto">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-10 text-center">
-            <div class="glass-card p-12">
-                <h3 class="text-2xl font-black mb-5 uppercase italic tracking-tight text-white">Sihirli Çark</h3>
-                <p class="text-slate-500 font-semibold leading-relaxed">Kaderini şansa bırakma! Akıcı animasyonlarla gerilimi doruklarda yaşa.</p>
-            </div>
-            <div class="glass-card p-12 border-indigo-500/20">
-                <h3 class="text-2xl font-black mb-5 uppercase italic tracking-tight text-white">Skor Tablosu</h3>
-                <p class="text-slate-500 font-semibold leading-relaxed">Gerçek zamanlı rekabeti zirveye taşı. Şampiyonu herkes görsün!</p>
-            </div>
-            <div class="glass-card p-12">
-                <h3 class="text-2xl font-black mb-5 uppercase italic tracking-tight text-white">Yüzlerce Soru</h3>
-                <p class="text-slate-500 font-semibold leading-relaxed">Her ortama uygun kategorilerle asla tükenmeyen eğlence havuzu.</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- İletişim Section -->
-    <section id="iletisim" class="py-24 px-6 max-w-4xl mx-auto text-center">
-        <div class="glass-card p-16 border-violet-500/20 shadow-2xl">
-            <h2 class="text-4xl font-black italic uppercase tracking-tighter mb-6 text-white">Bize Ulaşın</h2>
-            <p class="text-slate-500 font-semibold mb-10 leading-relaxed">Sorularınız, önerileriniz veya iş birliği talepleriniz için bize ulaşın.</p>
-            <a href="mailto:destek@yapyapabilirsen.com" class="text-2xl md:text-3xl font-black primary-gradient-text hover:opacity-80 transition-opacity break-all italic">
-                destek@yapyapabilirsen.com
-            </a>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="py-20 px-6 border-t border-white/5 text-center">
-        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-primary-gradient flex items-center justify-center overflow-hidden">
-                    <img src="logo.png" alt="YY Logo" class="w-full h-full object-contain p-1" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
-                    <span class="fun-font text-xs font-black text-white italic hidden">YY</span>
-                </div>
-                <span class="font-black tracking-[0.3em] uppercase text-[10px] text-slate-200 italic">Yap Yapabilirsen</span>
-            </div>
-            <div class="flex gap-12 text-slate-500 font-black text-[10px] uppercase tracking-[0.2em]">
-                <button onclick="toggleModal(true)" class="hover:text-white transition-colors">Gizlilik Politikası</button>
-                <a href="#iletisim" class="hover:text-white transition-colors">İletişim</a>
-            </div>
-            <div class="text-slate-600 font-bold text-[10px] uppercase tracking-widest">
-                © 2025 YY Studio. Tüm hakları saklıdır.
-            </div>
-        </div>
-    </footer>
-
-    <!-- Gizlilik Politikası Modalı -->
-    <div id="policy-modal" class="fixed inset-0 z-[100] hidden items-center justify-center p-6 bg-slate-950/90 backdrop-blur-md">
-        <div class="glass-card w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col relative shadow-[0_0_100px_rgba(139,92,246,0.2)]">
-            <!-- Modal Header -->
-            <div class="p-8 border-b border-white/5 flex justify-between items-center">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-center gap-6 mb-10">
+            <div class="flex items-center gap-4">
+                <img src="logo.png" alt="YY" class="w-12 h-12 rounded-full border-2 border-violet-600 shadow-lg" onerror="this.src='https://via.placeholder.com/48?text=YY'">
                 <div>
-                    <h2 class="text-3xl font-black italic uppercase primary-gradient-text">Gizlilik Politikası</h2>
-                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Son Güncelleme: 24 Aralık 2025</p>
+                    <h1 class="text-2xl font-black italic uppercase tracking-tighter">YY Yönetim</h1>
+                    <p id="auth-status" class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Bağlanıyor...</p>
                 </div>
-                <button onclick="toggleModal(false)" class="p-3 bg-white/5 rounded-2xl text-slate-500 hover:text-white transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
             </div>
             
-            <!-- Modal Body (Birebir dökümandaki metin) -->
-            <div class="flex-1 overflow-y-auto p-10 policy-content">
-                <p><strong>YY Studio</strong> ("biz", "bize" veya "bizim") tarafından geliştirilen <strong>Yap Yapabilirsen</strong> uygulaması için gizliliğiniz bizim için çok önemlidir. Bu belge, uygulamamızı kullandığınızda toplanan bilgiler (veya toplanmayanlar) hakkında sizi bilgilendirmek amacıyla hazırlanmıştır.</p>
-
-                <h3>1. Veri Toplama ve Kullanımı</h3>
-                <p><strong>Yap Yapabilirsen</strong>, kullanıcılarından doğrudan herhangi bir kişisel veri (isim, e-posta, telefon numarası, konum vb.) talep etmez ve toplamaz. Uygulama, kayıt olmanıza gerek kalmadan doğrudan kullanılabilir şekilde tasarlanmıştır.</p>
-
-                <h3>2. Üçüncü Taraf Hizmetleri</h3>
-                <p>Uygulamamızın işleyişi ve size ücretsiz sunulabilmesi için aşağıdaki güvenilir üçüncü taraf hizmetlerini kullanıyoruz:</p>
-                <ul>
-                    <li><strong>Google AdMob:</strong> Uygulama içinde reklam göstermek için kullanılır. AdMob, size ilgi alanınıza yönelik reklamlar sunabilmek için cihazınızın "Reklam Kimliği"ni (Advertising ID) kullanabilir.</li>
-                    <li><strong>Firebase (Google):</strong> Uygulama verilerini (sorular, kategoriler vb.) buluttan çekmek için kullanılır. Firebase, teknik altyapı ve uygulama performansı analizi için kişisel olmayan anonim teknik veriler toplayabilir.</li>
-                </ul>
-
-                <h3>3. Çerezler ve Depolama</h3>
-                <p>Uygulama, kullanıcı bazlı bir takip çerezi kullanmaz. Tüm içerik Firebase üzerinden anlık olarak çekilir ve cihazınızda herhangi bir profil oluşturulmaz.</p>
-
-                <h3>4. Çocukların Gizliliği</h3>
-                <p>Uygulamamız genel bir kitleye hitap etmekle birlikte, bilerek ve isteyerek çocuklardan kişisel veri toplamıyoruz.</p>
-
-                <h3>5. İletişim</h3>
-                <p>Bu Gizlilik Politikası ile ilgili herhangi bir sorunuz varsa, bizimle şu e-posta adresi üzerinden iletişime geçebilirsiniz:<br>
-                <strong>destek@yapyapabilirsen.com</strong></p>
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="p-6 bg-white/5 text-center">
-                <button onclick="toggleModal(false)" class="text-[10px] font-black uppercase text-slate-500 hover:text-white tracking-[0.3em] transition-colors">ANLADIM VE KAPAT</button>
+            <div id="nav-tabs" class="hidden flex gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/5 overflow-x-auto no-scrollbar">
+                <button onclick="switchTab('add')" id="tab-add" class="tab-btn active px-4 py-2 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all">EKLE</button>
+                <button onclick="switchTab('list')" id="tab-list" class="tab-btn px-4 py-2 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all">LİSTE</button>
+                <button onclick="switchTab('swipe')" id="tab-swipe" class="tab-btn px-4 py-2 text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all">AYIKLA ⚡</button>
             </div>
         </div>
+
+        <!-- Login -->
+        <div id="login-section" class="glass-card rounded-[2.5rem] p-10 text-center max-w-md mx-auto">
+            <h2 class="text-xl font-bold mb-6">Yönetici Girişi</h2>
+            <input type="password" id="admin-password" placeholder="Şifre..." class="w-full bg-slate-950/50 border border-white/10 rounded-2xl px-6 py-4 font-bold text-center mb-6 focus:ring-2 focus:ring-violet-500 outline-none transition-all">
+            <button onclick="handleLogin()" class="btn-primary w-full py-4 rounded-2xl font-black tracking-widest uppercase shadow-xl active:scale-95 transition-transform">PANELİ AÇ</button>
+        </div>
+
+        <!-- Section: Add -->
+        <div id="section-add" class="hidden animate-in fade-in duration-500">
+            <div class="glass-card rounded-[2.5rem] p-8 md:p-12">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase text-slate-500 ml-2 tracking-widest">Kategori</label>
+                        <select id="q-category" class="w-full bg-slate-950/50 border border-white/10 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-violet-500 appearance-none text-white">
+                            <option value="Doğruluk-Cesaret">Doğruluk-Cesaret</option>
+                            <option value="Hızlı Düşün">Hızlı Düşün</option>
+                            <option value="Couple Soruları">Couple Soruları</option>
+                            <option value="Genel Kültür">Genel Kültür</option>
+                            <option value="Yılbaşı Özel">Yılbaşı Özel</option>
+                            <option value="Tanışma">Tanışma</option>
+                            <option value="+18">+18</option>
+                            <option value="Çember Oyunu">Çember Oyunu</option>
+                            <option value="Eğlence">Eğlence</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase text-slate-500 ml-2 tracking-widest">Süre (Saniye)</label>
+                        <input type="number" id="q-time" value="30" class="w-full bg-slate-950/50 border border-white/10 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-violet-500 text-white">
+                    </div>
+                </div>
+                <div class="space-y-2 mb-8">
+                    <label class="text-[10px] font-black uppercase text-slate-500 ml-2 tracking-widest">Soru Metni</label>
+                    <textarea id="q-text" rows="4" placeholder="Görevi buraya yaz..." class="w-full bg-slate-950/50 border border-white/10 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-2 focus:ring-violet-500 resize-none text-white leading-relaxed"></textarea>
+                </div>
+                <button onclick="submitToFirebase()" id="submit-btn" class="btn-primary w-full py-6 rounded-3xl font-black text-xl italic uppercase shadow-2xl active:scale-95 transition-all">SORUYU KAYDET</button>
+            </div>
+        </div>
+
+        <!-- Section: List -->
+        <div id="section-list" class="hidden space-y-8 animate-in fade-in duration-500 pb-20">
+            <div id="questions-list-container" class="space-y-10">
+                <div class="text-center py-20 text-slate-500 font-bold italic">Sorular yükleniyor...</div>
+            </div>
+        </div>
+
+        <!-- Section: Swipe -->
+        <div id="section-swipe" class="hidden animate-in fade-in duration-500 overflow-hidden">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-black italic uppercase tracking-tighter text-white">Hızlı Ayıklama</h2>
+                <p class="text-slate-500 text-xs font-bold uppercase tracking-[0.2em] mt-2">Sola At: Sil | Sağa At: Kalsın</p>
+            </div>
+            
+            <div class="relative max-w-sm mx-auto h-[450px]">
+                <div id="swipe-container" class="swipe-container h-full">
+                    <div class="flex items-center justify-center h-full text-slate-600 font-bold italic">Sorular taranıyor...</div>
+                </div>
+                <div id="indicator-delete" class="indicator delete">SİL</div>
+                <div id="indicator-keep" class="indicator keep">TUT</div>
+            </div>
+
+            <div class="flex justify-center items-center gap-6 mt-6 pb-10">
+                <button onclick="simulateSwipe('left')" class="w-14 h-14 rounded-full bg-rose-500/10 border-2 border-rose-500 flex items-center justify-center text-rose-500 active:scale-90 transition-all shadow-lg hover:bg-rose-500 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+                <!-- Swipe Edit Button -->
+                <button onclick="openEditFromSwipe()" class="w-16 h-16 rounded-full bg-violet-600/20 border-2 border-violet-600 flex items-center justify-center text-violet-500 active:scale-90 transition-all shadow-lg hover:bg-violet-600 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button onclick="simulateSwipe('right')" class="w-14 h-14 rounded-full bg-emerald-500/10 border-2 border-emerald-500 flex items-center justify-center text-emerald-500 active:scale-90 transition-all shadow-lg hover:bg-emerald-500 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Edit Modal -->
+        <div id="edit-modal" class="fixed inset-0 z-[200] hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <div class="glass-card w-full max-w-xl rounded-[2.5rem] p-8 md:p-12 relative animate-in zoom-in duration-300">
+                <button onclick="closeEditModal()" class="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+                
+                <h3 class="text-2xl font-black italic uppercase text-white mb-8">Soruyu Düzenle</h3>
+                
+                <input type="hidden" id="edit-id">
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Kategori</label>
+                            <select id="edit-category" class="w-full bg-slate-950/50 border border-white/10 rounded-2xl px-6 py-4 font-bold outline-none text-white">
+                                <option value="Doğruluk-Cesaret">Doğruluk-Cesaret</option>
+                                <option value="Hızlı Düşün">Hızlı Düşün</option>
+                                <option value="Couple Soruları">Couple Soruları</option>
+                                <option value="Genel Kültür">Genel Kültür</option>
+                                <option value="Yılbaşı Özel">Yılbaşı Özel</option>
+                                <option value="Tanışma">Tanışma</option>
+                                <option value="+18">+18</option>
+                                <option value="Çember Oyunu">Çember Oyunu</option>
+                                <option value="Eğlence">Eğlence</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Süre</label>
+                            <input type="number" id="edit-duration" class="w-full bg-slate-950/50 border border-white/10 rounded-2xl px-6 py-4 font-bold outline-none text-white">
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Soru Metni</label>
+                        <textarea id="edit-text" rows="5" class="w-full bg-slate-950/50 border border-white/10 rounded-2xl px-6 py-4 font-bold outline-none text-white resize-none leading-relaxed"></textarea>
+                    </div>
+                    <button onclick="saveEdit()" class="btn-primary w-full py-6 rounded-3xl font-black text-xl italic uppercase shadow-2xl active:scale-95 transition-all">DEĞİŞİKLİKLERİ KAYDET</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hidden z-[300] shadow-2xl transition-all"></div>
     </div>
 
-    <script>
-        function toggleModal(show) {
-            const modal = document.getElementById('policy-modal');
-            if (show) {
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden'; // Scroll kilitle
-            } else {
-                modal.classList.remove('active');
-                document.body.style.overflow = 'auto'; // Scroll aç
-            }
-        }
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Dışarı tıklayınca kapatma
-        window.onclick = function(event) {
-            const modal = document.getElementById('policy-modal');
-            if (event.target == modal) {
-                toggleModal(false);
-            }
-        }
+        const firebaseConfig = {
+            apiKey: "AIzaSyDdqsVJ1Wylc45fwT4z7SqRze4Ge1vAMes",
+            authDomain: "yapyapabilirsen-8f228.firebaseapp.com",
+            projectId: "yapyapabilirsen-8f228",
+            storageBucket: "yapyapabilirsen-8f228.firebasestorage.app",
+            messagingSenderId: "311830929976",
+            appId: "1:311830929976:web:6885ddc11422c1cec63ccd"
+        };
 
-        window.addEventListener('scroll', () => {
-            const nav = document.querySelector('nav div');
-            if (window.scrollY > 20) {
-                nav.style.backgroundColor = 'rgba(3, 5, 23, 0.9)';
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let user = null;
+        let allQuestions = [];
+        let currentSwipeIndex = 0;
+
+        onAuthStateChanged(auth, async (u) => {
+            if (u) {
+                user = u;
+                document.getElementById('auth-status').innerText = "Bağlantı Hazır: " + u.uid.substring(0, 6);
+                await fetchQuestions();
             } else {
-                nav.style.backgroundColor = 'rgba(15, 23, 41, 0.6)';
+                signInAnonymously(auth);
             }
         });
-    </script>
 
+        window.handleLogin = () => {
+            const pass = document.getElementById('admin-password').value;
+            if (pass === "yap123") {
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('section-add').classList.remove('hidden');
+                document.getElementById('nav-tabs').classList.remove('hidden');
+            } else {
+                showToast("Hatalı Şifre!", "bg-rose-500 text-white");
+            }
+        };
+
+        window.switchTab = async (tab) => {
+            document.querySelectorAll('[id^="section-"]').forEach(s => s.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('section-' + tab).classList.remove('hidden');
+            document.getElementById('tab-' + tab).classList.add('active');
+            if (tab === 'list' || tab === 'swipe') await fetchQuestions();
+        };
+
+        window.fetchQuestions = async () => {
+            try {
+                const querySnapshot = await getDocs(collection(db, 'questions'));
+                allQuestions = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    allQuestions.push({ 
+                        id: doc.id, 
+                        category: data.category || 'Belirsiz',
+                        text: data.text || data.question || 'Metin Bulunamadı',
+                        duration: data.duration || data.time || 30
+                    });
+                });
+                renderList();
+                renderSwipeCards();
+            } catch (err) {
+                console.error("Veri çekme hatası:", err);
+                if(err.code === 'permission-denied') {
+                    showToast("Erişim Reddedildi!", "bg-rose-600 text-white");
+                }
+            }
+        };
+
+        window.submitToFirebase = async () => {
+            const category = document.getElementById('q-category').value;
+            const duration = parseInt(document.getElementById('q-time').value);
+            const text = document.getElementById('q-text').value;
+            if (!text.trim()) return showToast("Soru boş olamaz!", "bg-amber-500 text-slate-900");
+
+            try {
+                const btn = document.getElementById('submit-btn');
+                btn.disabled = true;
+                btn.innerText = "KAYDEDİLİYOR...";
+                await addDoc(collection(db, 'questions'), { category, duration, text, createdAt: serverTimestamp() });
+                showToast("Soru Başarıyla Eklendi!", "bg-emerald-500 text-white");
+                document.getElementById('q-text').value = "";
+                await fetchQuestions();
+            } catch (err) {
+                showToast("Hata: " + err.code, "bg-rose-500 text-white");
+            } finally {
+                document.getElementById('submit-btn').disabled = false;
+                document.getElementById('submit-btn').innerText = "SORUYU KAYDET";
+            }
+        };
+
+        // Edit Functions
+        window.openEditModal = (id) => {
+            const q = allQuestions.find(item => item.id === id);
+            if(!q) return;
+            document.getElementById('edit-id').value = q.id;
+            document.getElementById('edit-category').value = q.category;
+            document.getElementById('edit-duration').value = q.duration;
+            document.getElementById('edit-text').value = q.text;
+            document.getElementById('edit-modal').classList.add('active');
+        };
+
+        window.openEditFromSwipe = () => {
+            const q = allQuestions[currentSwipeIndex];
+            if(q) openEditModal(q.id);
+        };
+
+        window.closeEditModal = () => {
+            document.getElementById('edit-modal').classList.remove('active');
+        };
+
+        window.saveEdit = async () => {
+            const id = document.getElementById('edit-id').value;
+            const category = document.getElementById('edit-category').value;
+            const duration = parseInt(document.getElementById('edit-duration').value);
+            const text = document.getElementById('edit-text').value;
+
+            if(!text.trim()) return showToast("Metin boş olamaz!", "bg-amber-500 text-slate-900");
+
+            try {
+                const questionRef = doc(db, 'questions', id);
+                await updateDoc(questionRef, { category, duration, text });
+                showToast("Güncellendi! ✍️", "bg-indigo-500 text-white");
+                closeEditModal();
+                await fetchQuestions();
+            } catch (err) {
+                showToast("Güncelleme hatası!", "bg-rose-500 text-white");
+            }
+        };
+
+        window.deleteQuestionUI = async (id) => {
+            if (!confirm("Silmek istediğine emin misin?")) return;
+            try {
+                await deleteDoc(doc(db, 'questions', id));
+                showToast("Soru Silindi", "bg-slate-700 text-white");
+                await fetchQuestions();
+            } catch (err) {
+                showToast("Hata!", "bg-rose-500 text-white");
+            }
+        };
+
+        function renderList() {
+            const container = document.getElementById('questions-list-container');
+            if (allQuestions.length === 0) {
+                container.innerHTML = `<div class="text-center py-20 text-slate-600 font-bold">Soru yok.</div>`;
+                return;
+            }
+
+            const grouped = allQuestions.reduce((acc, q) => {
+                const catName = q.category;
+                if (!acc[catName]) acc[catName] = [];
+                acc[catName].push(q);
+                return acc;
+            }, {});
+
+            container.innerHTML = "";
+            Object.keys(grouped).sort().forEach(cat => {
+                const section = document.createElement('div');
+                section.innerHTML = `
+                    <div class="flex items-center gap-4 mb-4 mt-8 px-2">
+                        <h3 class="text-lg font-black italic uppercase text-violet-400 tracking-tight">${cat}</h3>
+                        <div class="h-px flex-1 bg-white/10"></div>
+                        <span class="text-[9px] font-black bg-white/5 border border-white/5 px-2 py-0.5 rounded-md text-slate-500">${grouped[cat].length} ADET</span>
+                    </div>
+                    <div class="grid gap-2">
+                        ${grouped[cat].map(q => `
+                            <div class="glass-card p-4 rounded-xl flex justify-between items-center group hover:border-white/20 transition-all">
+                                <div class="flex-1 pr-4">
+                                    <p class="text-sm font-semibold text-slate-200 leading-snug">${q.text}</p>
+                                    <span class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1 inline-block">${q.duration} SN</span>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="openEditModal('${q.id}')" class="p-2 rounded-lg bg-violet-500/5 text-slate-600 hover:text-violet-400 hover:bg-violet-500/20 transition-all">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                                    </button>
+                                    <button onclick="deleteQuestionUI('${q.id}')" class="p-2 rounded-lg bg-rose-500/5 text-slate-600 hover:text-rose-500 hover:bg-rose-500/20 transition-all">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(section);
+            });
+        }
+
+        function renderSwipeCards() {
+            const container = document.getElementById('swipe-container');
+            container.innerHTML = "";
+            const activeQs = allQuestions.slice(currentSwipeIndex, currentSwipeIndex + 3);
+            
+            if (activeQs.length === 0) {
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-500 font-bold italic gap-4">Tüm sorular bitti!</div>`;
+                return;
+            }
+
+            activeQs.reverse().forEach((q, idx) => {
+                const card = document.createElement('div');
+                card.className = `swipe-card glass-card rounded-[2.5rem] p-10 flex flex-col items-center justify-center text-center shadow-2xl border-2 border-white/5`;
+                card.style.zIndex = idx;
+                const scale = 1 - (activeQs.length - 1 - idx) * 0.05;
+                const translateY = (activeQs.length - 1 - idx) * 15;
+                card.style.transform = `scale(${scale}) translateY(${translateY}px)`;
+                
+                card.innerHTML = `
+                    <div class="mb-4 px-3 py-1 bg-violet-600/20 border border-violet-500/30 rounded-full text-[9px] font-black text-violet-400 uppercase tracking-widest">${q.category}</div>
+                    <p class="text-xl md:text-2xl font-black text-white italic leading-tight mb-8">"${q.text}"</p>
+                    <div class="flex items-center gap-2 text-slate-500 font-black text-[10px] uppercase tracking-widest">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        ${q.duration} SANİYE
+                    </div>
+                `;
+                if (idx === activeQs.length - 1) initTouch(card, q);
+                container.appendChild(card);
+            });
+        }
+
+        let startX = 0;
+        function initTouch(el, question) {
+            let currentX = 0;
+            const delInd = document.getElementById('indicator-delete');
+            const keepInd = document.getElementById('indicator-keep');
+
+            const handleMove = (x) => {
+                currentX = x - startX;
+                const rotation = currentX / 10;
+                el.style.transform = `translateX(${currentX}px) rotate(${rotation}deg)`;
+                if (currentX < -50) { delInd.style.opacity = Math.min(Math.abs(currentX)/150, 1); keepInd.style.opacity = 0; } 
+                else if (currentX > 50) { keepInd.style.opacity = Math.min(currentX/150, 1); delInd.style.opacity = 0; } 
+                else { delInd.style.opacity = 0; keepInd.style.opacity = 0; }
+            };
+
+            const handleEnd = async () => {
+                el.classList.remove('dragging');
+                delInd.style.opacity = 0;
+                keepInd.style.opacity = 0;
+                if (currentX < -120) {
+                    el.style.transform = `translateX(-1000px) rotate(-30deg)`;
+                    el.style.opacity = 0;
+                    try { await deleteDoc(doc(db, 'questions', question.id)); showToast("Silindi", "bg-rose-600 text-white"); } catch(e) {}
+                    nextSwipe();
+                } else if (currentX > 120) {
+                    el.style.transform = `translateX(1000px) rotate(30deg)`;
+                    el.style.opacity = 0;
+                    showToast("Tutuldu", "bg-emerald-600 text-white");
+                    nextSwipe();
+                } else { el.style.transform = `translateX(0) rotate(0) scale(1)`; }
+                currentX = 0;
+            };
+
+            el.addEventListener('touchstart', e => { startX = e.touches[0].clientX; el.classList.add('dragging'); }, { passive: true });
+            el.addEventListener('touchmove', e => handleMove(e.touches[0].clientX), { passive: true });
+            el.addEventListener('touchend', handleEnd);
+
+            el.addEventListener('mousedown', e => {
+                startX = e.clientX; el.classList.add('dragging');
+                const onMouseMove = (me) => handleMove(me.clientX);
+                const onMouseUp = () => { handleEnd(); window.removeEventListener('mousemove', onMouseMove); window.removeEventListener('mouseup', onMouseUp); };
+                window.addEventListener('mousemove', onMouseMove);
+                window.addEventListener('mouseup', onMouseUp);
+            });
+        }
+
+        window.simulateSwipe = async (dir) => {
+            const q = allQuestions[currentSwipeIndex];
+            if (!q) return;
+            const cards = document.querySelectorAll('.swipe-card');
+            const topCard = cards[cards.length - 1];
+            if (dir === 'left') { topCard.style.transform = `translateX(-1000px) rotate(-30deg)`; await deleteDoc(doc(db, 'questions', q.id)); showToast("Silindi", "bg-rose-600 text-white"); } 
+            else { topCard.style.transform = `translateX(1000px) rotate(30deg)`; showToast("Tutuldu", "bg-emerald-600 text-white"); }
+            topCard.style.opacity = 0;
+            nextSwipe();
+        };
+
+        function nextSwipe() { setTimeout(() => { currentSwipeIndex++; renderSwipeCards(); }, 300); }
+
+        function showToast(text, classes) {
+            const t = document.getElementById('toast');
+            if(!t) return;
+            t.innerText = text;
+            t.className = `fixed bottom-10 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest z-[300] shadow-2xl ${classes}`;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 2000);
+        }
+    </script>
 </body>
 </html>
