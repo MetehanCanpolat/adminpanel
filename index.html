@@ -75,6 +75,10 @@
         ::-webkit-scrollbar-thumb { background: var(--bg-secondary); border-radius: 10px; }
         
         .no-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* Modal Blur */
+        #edit-modal.active { display: flex; animation: fadeIn 0.3s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -145,7 +149,7 @@
         <!-- Section: Swipe -->
         <div id="section-swipe" class="hidden animate-in fade-in duration-500 overflow-hidden">
             <div class="text-center mb-8">
-                <h2 class="text-3xl font-black italic uppercase tracking-tighter">Hızlı Ayıklama</h2>
+                <h2 class="text-3xl font-black italic uppercase tracking-tighter text-white">Hızlı Ayıklama</h2>
                 <p class="text-slate-500 text-xs font-bold uppercase tracking-[0.2em] mt-2">Sola At: Sil | Sağa At: Kalsın</p>
             </div>
             
@@ -157,24 +161,68 @@
                 <div id="indicator-keep" class="indicator keep">TUT</div>
             </div>
 
-            <div class="flex justify-center gap-10 mt-6 pb-10">
-                <button onclick="simulateSwipe('left')" class="w-16 h-16 rounded-full bg-rose-500/10 border-2 border-rose-500 flex items-center justify-center text-rose-500 active:scale-90 transition-all shadow-lg hover:bg-rose-500 hover:text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            <div class="flex justify-center items-center gap-6 mt-6 pb-10">
+                <button onclick="simulateSwipe('left')" class="w-14 h-14 rounded-full bg-rose-500/10 border-2 border-rose-500 flex items-center justify-center text-rose-500 active:scale-90 transition-all shadow-lg hover:bg-rose-500 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                 </button>
-                <button onclick="simulateSwipe('right')" class="w-16 h-16 rounded-full bg-emerald-500/10 border-2 border-emerald-500 flex items-center justify-center text-emerald-500 active:scale-90 transition-all shadow-lg hover:bg-emerald-500 hover:text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <!-- Swipe Edit Button -->
+                <button onclick="openEditFromSwipe()" class="w-16 h-16 rounded-full bg-violet-600/20 border-2 border-violet-600 flex items-center justify-center text-violet-500 active:scale-90 transition-all shadow-lg hover:bg-violet-600 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button onclick="simulateSwipe('right')" class="w-14 h-14 rounded-full bg-emerald-500/10 border-2 border-emerald-500 flex items-center justify-center text-emerald-500 active:scale-90 transition-all shadow-lg hover:bg-emerald-500 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                 </button>
             </div>
         </div>
 
-        <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hidden z-[100] shadow-2xl transition-all"></div>
+        <!-- Edit Modal -->
+        <div id="edit-modal" class="fixed inset-0 z-[200] hidden items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <div class="glass-card w-full max-w-xl rounded-[2.5rem] p-8 md:p-12 relative animate-in zoom-in duration-300">
+                <button onclick="closeEditModal()" class="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+                
+                <h3 class="text-2xl font-black italic uppercase text-white mb-8">Soruyu Düzenle</h3>
+                
+                <input type="hidden" id="edit-id">
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Kategori</label>
+                            <select id="edit-category" class="w-full bg-slate-950/50 border border-white/10 rounded-2xl px-6 py-4 font-bold outline-none text-white">
+                                <option value="Doğruluk-Cesaret">Doğruluk-Cesaret</option>
+                                <option value="Hızlı Düşün">Hızlı Düşün</option>
+                                <option value="Couple Soruları">Couple Soruları</option>
+                                <option value="Genel Kültür">Genel Kültür</option>
+                                <option value="Yılbaşı Özel">Yılbaşı Özel</option>
+                                <option value="Tanışma">Tanışma</option>
+                                <option value="+18">+18</option>
+                                <option value="Çember Oyunu">Çember Oyunu</option>
+                                <option value="Eğlence">Eğlence</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Süre</label>
+                            <input type="number" id="edit-duration" class="w-full bg-slate-950/50 border border-white/10 rounded-2xl px-6 py-4 font-bold outline-none text-white">
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Soru Metni</label>
+                        <textarea id="edit-text" rows="5" class="w-full bg-slate-950/50 border border-white/10 rounded-2xl px-6 py-4 font-bold outline-none text-white resize-none leading-relaxed"></textarea>
+                    </div>
+                    <button onclick="saveEdit()" class="btn-primary w-full py-6 rounded-3xl font-black text-xl italic uppercase shadow-2xl active:scale-95 transition-all">DEĞİŞİKLİKLERİ KAYDET</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hidden z-[300] shadow-2xl transition-all"></div>
     </div>
 
     <!-- Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDdqsVJ1Wylc45fwT4z7SqRze4Ge1vAMes",
@@ -228,7 +276,6 @@
                 allQuestions = [];
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
-                    // ÖNEMLİ: Eğer text alanı yoksa question alanına bak (fallback)
                     allQuestions.push({ 
                         id: doc.id, 
                         category: data.category || 'Belirsiz',
@@ -241,8 +288,7 @@
             } catch (err) {
                 console.error("Veri çekme hatası:", err);
                 if(err.code === 'permission-denied') {
-                    showToast("Erişim Reddedildi! Rules ayarlarını kontrol et.", "bg-rose-600 text-white");
-                    document.getElementById('questions-list-container').innerHTML = `<div class="text-center py-20 text-rose-500 font-bold">Firebase Rules Hatası! Erişiminiz yok.</div>`;
+                    showToast("Erişim Reddedildi!", "bg-rose-600 text-white");
                 }
             }
         };
@@ -257,42 +303,72 @@
                 const btn = document.getElementById('submit-btn');
                 btn.disabled = true;
                 btn.innerText = "KAYDEDİLİYOR...";
-                
-                // JSON formatına uygun şekilde 'text' ve 'duration' olarak kaydediyoruz
-                await addDoc(collection(db, 'questions'), { 
-                    category, 
-                    duration, 
-                    text, 
-                    createdAt: serverTimestamp() 
-                });
-                
+                await addDoc(collection(db, 'questions'), { category, duration, text, createdAt: serverTimestamp() });
                 showToast("Soru Başarıyla Eklendi!", "bg-emerald-500 text-white");
                 document.getElementById('q-text').value = "";
                 await fetchQuestions();
             } catch (err) {
                 showToast("Hata: " + err.code, "bg-rose-500 text-white");
             } finally {
-                const btn = document.getElementById('submit-btn');
-                btn.disabled = false;
-                btn.innerText = "SORUYU KAYDET";
+                document.getElementById('submit-btn').disabled = false;
+                document.getElementById('submit-btn').innerText = "SORUYU KAYDET";
+            }
+        };
+
+        // Edit Functions
+        window.openEditModal = (id) => {
+            const q = allQuestions.find(item => item.id === id);
+            if(!q) return;
+            document.getElementById('edit-id').value = q.id;
+            document.getElementById('edit-category').value = q.category;
+            document.getElementById('edit-duration').value = q.duration;
+            document.getElementById('edit-text').value = q.text;
+            document.getElementById('edit-modal').classList.add('active');
+        };
+
+        window.openEditFromSwipe = () => {
+            const q = allQuestions[currentSwipeIndex];
+            if(q) openEditModal(q.id);
+        };
+
+        window.closeEditModal = () => {
+            document.getElementById('edit-modal').classList.remove('active');
+        };
+
+        window.saveEdit = async () => {
+            const id = document.getElementById('edit-id').value;
+            const category = document.getElementById('edit-category').value;
+            const duration = parseInt(document.getElementById('edit-duration').value);
+            const text = document.getElementById('edit-text').value;
+
+            if(!text.trim()) return showToast("Metin boş olamaz!", "bg-amber-500 text-slate-900");
+
+            try {
+                const questionRef = doc(db, 'questions', id);
+                await updateDoc(questionRef, { category, duration, text });
+                showToast("Güncellendi! ✍️", "bg-indigo-500 text-white");
+                closeEditModal();
+                await fetchQuestions();
+            } catch (err) {
+                showToast("Güncelleme hatası!", "bg-rose-500 text-white");
             }
         };
 
         window.deleteQuestionUI = async (id) => {
-            if (!confirm("Bu soruyu ebediyen silmek istediğine emin misin?")) return;
+            if (!confirm("Silmek istediğine emin misin?")) return;
             try {
                 await deleteDoc(doc(db, 'questions', id));
                 showToast("Soru Silindi", "bg-slate-700 text-white");
                 await fetchQuestions();
             } catch (err) {
-                showToast("Silme hatası!", "bg-rose-500 text-white");
+                showToast("Hata!", "bg-rose-500 text-white");
             }
         };
 
         function renderList() {
             const container = document.getElementById('questions-list-container');
             if (allQuestions.length === 0) {
-                container.innerHTML = `<div class="text-center py-20 text-slate-600 font-bold">Veritabanında hiç soru yok veya bağlantı kurulamadı.</div>`;
+                container.innerHTML = `<div class="text-center py-20 text-slate-600 font-bold">Soru yok.</div>`;
                 return;
             }
 
@@ -307,7 +383,7 @@
             Object.keys(grouped).sort().forEach(cat => {
                 const section = document.createElement('div');
                 section.innerHTML = `
-                    <div class="flex items-center gap-4 mb-4 mt-8">
+                    <div class="flex items-center gap-4 mb-4 mt-8 px-2">
                         <h3 class="text-lg font-black italic uppercase text-violet-400 tracking-tight">${cat}</h3>
                         <div class="h-px flex-1 bg-white/10"></div>
                         <span class="text-[9px] font-black bg-white/5 border border-white/5 px-2 py-0.5 rounded-md text-slate-500">${grouped[cat].length} ADET</span>
@@ -319,9 +395,14 @@
                                     <p class="text-sm font-semibold text-slate-200 leading-snug">${q.text}</p>
                                     <span class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mt-1 inline-block">${q.duration} SN</span>
                                 </div>
-                                <button onclick="deleteQuestionUI('${q.id}')" class="p-2 rounded-lg bg-rose-500/5 text-slate-600 hover:text-rose-500 hover:bg-rose-500/20 transition-all">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                                </button>
+                                <div class="flex gap-2">
+                                    <button onclick="openEditModal('${q.id}')" class="p-2 rounded-lg bg-violet-500/5 text-slate-600 hover:text-violet-400 hover:bg-violet-500/20 transition-all">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                                    </button>
+                                    <button onclick="deleteQuestionUI('${q.id}')" class="p-2 rounded-lg bg-rose-500/5 text-slate-600 hover:text-rose-500 hover:bg-rose-500/20 transition-all">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                    </button>
+                                </div>
                             </div>
                         `).join('')}
                     </div>
@@ -333,16 +414,10 @@
         function renderSwipeCards() {
             const container = document.getElementById('swipe-container');
             container.innerHTML = "";
-            
             const activeQs = allQuestions.slice(currentSwipeIndex, currentSwipeIndex + 3);
             
             if (activeQs.length === 0) {
-                container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-500 font-bold italic gap-4">
-                    <div class="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                    </div>
-                    Tüm sorular ayıklandı!
-                </div>`;
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-slate-500 font-bold italic gap-4">Tüm sorular bitti!</div>`;
                 return;
             }
 
@@ -350,7 +425,6 @@
                 const card = document.createElement('div');
                 card.className = `swipe-card glass-card rounded-[2.5rem] p-10 flex flex-col items-center justify-center text-center shadow-2xl border-2 border-white/5`;
                 card.style.zIndex = idx;
-                
                 const scale = 1 - (activeQs.length - 1 - idx) * 0.05;
                 const translateY = (activeQs.length - 1 - idx) * 15;
                 card.style.transform = `scale(${scale}) translateY(${translateY}px)`;
@@ -363,7 +437,6 @@
                         ${q.duration} SANİYE
                     </div>
                 `;
-
                 if (idx === activeQs.length - 1) initTouch(card, q);
                 container.appendChild(card);
             });
@@ -379,59 +452,37 @@
                 currentX = x - startX;
                 const rotation = currentX / 10;
                 el.style.transform = `translateX(${currentX}px) rotate(${rotation}deg)`;
-                
-                if (currentX < -50) { 
-                    delInd.style.opacity = Math.min(Math.abs(currentX)/150, 1); 
-                    keepInd.style.opacity = 0; 
-                } else if (currentX > 50) { 
-                    keepInd.style.opacity = Math.min(currentX/150, 1); 
-                    delInd.style.opacity = 0; 
-                } else { 
-                    delInd.style.opacity = 0; 
-                    keepInd.style.opacity = 0; 
-                }
+                if (currentX < -50) { delInd.style.opacity = Math.min(Math.abs(currentX)/150, 1); keepInd.style.opacity = 0; } 
+                else if (currentX > 50) { keepInd.style.opacity = Math.min(currentX/150, 1); delInd.style.opacity = 0; } 
+                else { delInd.style.opacity = 0; keepInd.style.opacity = 0; }
             };
 
             const handleEnd = async () => {
                 el.classList.remove('dragging');
                 delInd.style.opacity = 0;
                 keepInd.style.opacity = 0;
-
                 if (currentX < -120) {
                     el.style.transform = `translateX(-1000px) rotate(-30deg)`;
                     el.style.opacity = 0;
-                    try {
-                        await deleteDoc(doc(db, 'questions', question.id));
-                        showToast("Silindi", "bg-rose-600 text-white");
-                    } catch(e) { console.error(e); }
+                    try { await deleteDoc(doc(db, 'questions', question.id)); showToast("Silindi", "bg-rose-600 text-white"); } catch(e) {}
                     nextSwipe();
                 } else if (currentX > 120) {
                     el.style.transform = `translateX(1000px) rotate(30deg)`;
                     el.style.opacity = 0;
                     showToast("Tutuldu", "bg-emerald-600 text-white");
                     nextSwipe();
-                } else {
-                    el.style.transform = `translateX(0) rotate(0) scale(1)`;
-                }
+                } else { el.style.transform = `translateX(0) rotate(0) scale(1)`; }
                 currentX = 0;
             };
 
-            el.addEventListener('touchstart', e => {
-                startX = e.touches[0].clientX;
-                el.classList.add('dragging');
-            }, { passive: true });
+            el.addEventListener('touchstart', e => { startX = e.touches[0].clientX; el.classList.add('dragging'); }, { passive: true });
             el.addEventListener('touchmove', e => handleMove(e.touches[0].clientX), { passive: true });
             el.addEventListener('touchend', handleEnd);
 
             el.addEventListener('mousedown', e => {
-                startX = e.clientX;
-                el.classList.add('dragging');
+                startX = e.clientX; el.classList.add('dragging');
                 const onMouseMove = (me) => handleMove(me.clientX);
-                const onMouseUp = () => {
-                    handleEnd();
-                    window.removeEventListener('mousemove', onMouseMove);
-                    window.removeEventListener('mouseup', onMouseUp);
-                };
+                const onMouseUp = () => { handleEnd(); window.removeEventListener('mousemove', onMouseMove); window.removeEventListener('mouseup', onMouseUp); };
                 window.addEventListener('mousemove', onMouseMove);
                 window.addEventListener('mouseup', onMouseUp);
             });
@@ -440,34 +491,21 @@
         window.simulateSwipe = async (dir) => {
             const q = allQuestions[currentSwipeIndex];
             if (!q) return;
-            
             const cards = document.querySelectorAll('.swipe-card');
             const topCard = cards[cards.length - 1];
-            
-            if (dir === 'left') {
-                topCard.style.transform = `translateX(-1000px) rotate(-30deg)`;
-                await deleteDoc(doc(db, 'questions', q.id));
-                showToast("Silindi", "bg-rose-600 text-white");
-            } else {
-                topCard.style.transform = `translateX(1000px) rotate(30deg)`;
-                showToast("Tutuldu", "bg-emerald-600 text-white");
-            }
+            if (dir === 'left') { topCard.style.transform = `translateX(-1000px) rotate(-30deg)`; await deleteDoc(doc(db, 'questions', q.id)); showToast("Silindi", "bg-rose-600 text-white"); } 
+            else { topCard.style.transform = `translateX(1000px) rotate(30deg)`; showToast("Tutuldu", "bg-emerald-600 text-white"); }
             topCard.style.opacity = 0;
             nextSwipe();
         };
 
-        function nextSwipe() {
-            setTimeout(() => {
-                currentSwipeIndex++;
-                renderSwipeCards();
-            }, 300);
-        }
+        function nextSwipe() { setTimeout(() => { currentSwipeIndex++; renderSwipeCards(); }, 300); }
 
         function showToast(text, classes) {
             const t = document.getElementById('toast');
             if(!t) return;
             t.innerText = text;
-            t.className = `fixed bottom-10 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest z-[100] shadow-2xl ${classes}`;
+            t.className = `fixed bottom-10 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest z-[300] shadow-2xl ${classes}`;
             t.classList.remove('hidden');
             setTimeout(() => t.classList.add('hidden'), 2000);
         }
